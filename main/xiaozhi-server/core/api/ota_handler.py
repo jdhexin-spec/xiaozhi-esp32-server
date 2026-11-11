@@ -44,8 +44,8 @@ def _is_higher_version(a: str, b: str) -> bool:
 
 
 class OTAHandler(BaseHandler):
-    def __init__(self, config: dict):
-        super().__init__(config)
+    def __init__(self, config: dict, ws_server=None):
+        super().__init__(config)        self.ws_server = ws_server        self.assets_dir = os.path.join(os.getcwd(), "data", "ass
         auth_config = config["server"].get("auth", {})
         self.auth_enable = auth_config.get("enabled", False)
         # 设备白名单
@@ -227,7 +227,7 @@ class OTAHandler(BaseHandler):
                 },
                 "firmware": {
                     "version": device_version,
-                    "url": "",
+                    self.ws_server = ws_server        self.assets_dir = os.path.join(os.getcwd(), "data", "ass
                 },
             }
 
@@ -413,3 +413,9 @@ class OTAHandler(BaseHandler):
             except Exception:
                 pass
             return resp
+
+    def _get_assets_url(self):
+                try:
+                    if not os.path.isdir(self.assets_dir):
+                        return None
+                    bin_files = glob.glob(os.path.join(self.assets_di
