@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>Assets 管理</title>
+<style>
+body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; }
+h1 { color: #333; }
+h2 { color: #666; margin-top: 30px; }
+.upload-area { border: 2px dashed #ccc; padding: 20px; text-align: center; margin: 20px 0; }
+button { padding: 8px 20px; background: #4CAF50; color: white; border: none; cursor: pointer; margin: 5px; }
+button:hover { background: #45a049; }
+.device-list { margin: 10px 0; }
+.device-item { padding: 8px; border: 1px solid #eee; margin: 4px 0; display: flex; justify-content: space-between; }
+.push-btn { background: #2196F3; }
+.push-btn:hover { background: #1976D2; }
+</style>
+</head>
+<body>
+<h1>Assets 管理</h1>
+<h2>上传 assets.bin</h2>
+<div class="upload-area">
+<input type="file" id="file" accept=".bin">
+<button onclick="uploadFile()">上传</button>
+</div>
+<h2>在线设备</h2>
+<div id="devices">加载中...</div>
+<h2>已上传文件</h2>
+<div id="files">加载中...</div>
+<script>
+async function loadInfo() {
+  try {
+    const resp = await fetch('/xiaozhi/ota/assets/list');
+    const data = await resp.json();
+    let devHtml = '';
+    if (data.online_devices && data.online_devices.length > 0) {
+      data.online_devices.forEach(d => {
+        devHtml += '<div class="device-item"><span>' + d + '</span><button class="push-btn" onclick="pushAssets(\'' + d + '\')">推送 Assets</button></div>';
+      });
+    } else {
+      devHtml = '<p>无在线设备</p>';
+    }
+    document.getElementById('devices').innerHTML = devHtml;
+    let fileHtml = '';
+    if (data.files && data.files.length > 0) {
+      data.files.forEach(f => {
+        fileHtml += '<div class="device-item"><span>' + f.filename + ' (' + (f.size/1024).toFixed(1) + ' KB)</span></div>';
+      });
+    } else {
+      fileHtml = '<p>无文件</p>';
+    }
+    document.getElementById('files').innerHTML = fileHtml;
+  } catch(e) {
+    document.getElementById('devices').innerHTML = '加载失败: ' + e.message;
+  }
+}
+async function uploadFile() {
+  const fileInput = document.getElementById('file');
+  if (!fileInput.files[0]) { alert('请选择文件'); return; }
+  const formData = new FormData();
+  formData.append('file', fileInput.files[0]);
+  try {
+    const resp = await fetch('/xiaozhi/ota/assets/upload', { method: 'POST', body: formData });
+    const data = await resp.json();
+    if (data.success) { alert('上传成功: ' + data.filename); loadInfo(); }
+    else { alert('上传失败: ' + data.error); }
+  } catch(e) { alert('上传错误: ' + e.message); }
+}
+async function pushAssets(deviceId) {
+  try {
+    const resp = await fetch('/xiaozhi/ota/assets/push', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({device_id: deviceId})
+    });
+    const data = await resp.json();
+    if (data.success) { alert('推送成功'); }
+    else { alert('推送失败: ' + data.error); }
+  } catch(e) { alert('推送错误: ' + e.message); }
+}
+loadInfo();
+</script>
+</body>
+</html>
