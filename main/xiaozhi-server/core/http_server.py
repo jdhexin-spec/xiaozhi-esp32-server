@@ -8,10 +8,10 @@ TAG = __name__
 
 
 class SimpleHttpServer:
-    def __init__(self, config: dict):
+    def __init__(self, config: dict, ws_server=None): config: dict):
         self.config = config
         self.logger = setup_logging()
-        self.ota_handler = OTAHandler(config)
+        self.ota_handler = OTAHandler(config, ws_server=ws_server)
         self.vision_handler = VisionHandler(config)
 
     def _get_websocket_url(self, local_ip: str, port: int) -> str:
@@ -42,7 +42,7 @@ class SimpleHttpServer:
             if port:
                 app = web.Application()
 
-                if not read_config_from_api:
+                # Always register OTA routes
                     # 如果没有开启智控台，只是单模块运行，就需要再添加简单OTA接口，用于下发websocket接口
                     app.add_routes(
                         [
